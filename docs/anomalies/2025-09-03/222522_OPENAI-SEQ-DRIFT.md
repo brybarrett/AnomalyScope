@@ -1,0 +1,25 @@
+# Anomaly OPENAI-SEQ-DRIFT
+
+- **Timestamp:** 2025-09-03T22:25:22Z
+- **Severity:** high
+- **Description:** Pairwise string similarity across 5 live responses: mean=0.681, min=0.581 (threshold=0.85).
+
+## Meta
+```json
+{
+  "provider": "openai",
+  "prompt": "Explain the purpose of AnomalyScope in one concise sentence.",
+  "runs": 5,
+  "temperature": 0.9,
+  "threshold": 0.85,
+  "responses_sample": [
+    "AnomalyScope is designed to detect and analyze anomalies in data patterns, helping organizations identify unusual behavior or potential issues for improved decision-making and risk management.",
+    "AnomalyScope is designed to detect and analyze anomalies in data, helping organizations identify potential issues, optimize processes, and enhance decision-making.",
+    "AnomalyScope is designed to detect and analyze anomalies in data, helping organizations identify unusual patterns or behaviors that may indicate potential issues or opportunities.",
+    "AnomalyScope is a tool designed to detect, analyze, and visualize anomalies in data, helping organizations identify and address irregular patterns or behaviors.",
+    "AnomalyScope is designed to detect and analyze anomalies in data by identifying unusual patterns or behaviors, helping organizations improve decision-making and operational efficiency."
+  ],
+  "pairwise_min_similarity": 0.5813953488372093,
+  "pairwise_mean_similarity": 0.680542650573251
+}
+```
