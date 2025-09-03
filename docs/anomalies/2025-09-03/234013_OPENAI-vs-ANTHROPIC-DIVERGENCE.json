@@ -1,0 +1,39 @@
+{
+  "id": "OPENAI-vs-ANTHROPIC-DIVERGENCE",
+  "description": "Cross-provider drift on prompt with runs=3, temp=0.9. cross_similarity=0.482; openai: mean=0.667, min=0.542; anthropic: mean=0.442, min=0.170.",
+  "severity": "high",
+  "timestamp": "2025-09-03T23:40:13Z",
+  "meta": {
+    "prompt": "Explain the purpose of AnomalyScope in one concise sentence.",
+    "threshold": 0.85,
+    "providers": [
+      "openai",
+      "anthropic"
+    ],
+    "runs": 3,
+    "temperature": 0.9,
+    "samples": {
+      "openai": [
+        "AnomalyScope is designed to enhance cybersecurity by automatically detecting and analyzing anomalies in network traffic and user behavior to identify potential threats.",
+        "AnomalyScope is designed to detect and analyze anomalies in data, helping organizations identify unusual patterns and potential issues in their systems or processes.",
+        "AnomalyScope is designed to detect, analyze, and visualize anomalies in data, helping organizations identify unusual patterns and potential issues in their systems."
+      ],
+      "anthropic": [
+        "AnomalyScope is a diagnostic tool designed to help data scientists and analysts identify, investigate, and understand unusual patterns or outliers in complex datasets using advanced visualization and machine learning techniques.",
+        "AnomalyScope is a tool designed to help data scientists and analysts identify, investigate, and understand unusual patterns or outliers in complex datasets through interactive visualization and advanced anomaly detection techniques.",
+        "AnomalyScope is a visualization tool designed to help users detect, explore, and understand anomalies in complex time series data by providing interactive and context-rich visual analysis."
+      ]
+    },
+    "cross_similarity": 0.4820274197467726,
+    "within": {
+      "openai": {
+        "mean": 0.6668077606298576,
+        "min": 0.5421686746987951
+      },
+      "anthropic": {
+        "mean": 0.44248022508892076,
+        "min": 0.16956521739130434
+      }
+    }
+  }
+}
