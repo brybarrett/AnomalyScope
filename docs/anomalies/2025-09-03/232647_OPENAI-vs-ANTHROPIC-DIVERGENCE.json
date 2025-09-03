@@ -1,0 +1,39 @@
+{
+  "id": "OPENAI-vs-ANTHROPIC-DIVERGENCE",
+  "description": "Cross-provider drift on prompt with runs=3, temp=0.98. cross_similarity=0.498; openai: mean=0.599, min=0.521; anthropic: mean=0.728, min=0.615.",
+  "severity": "high",
+  "timestamp": "2025-09-03T23:26:47Z",
+  "meta": {
+    "prompt": "\ufeffExplain the purpose of AnomalyScope in one concise sentence.",
+    "threshold": 0.85,
+    "providers": [
+      "openai",
+      "anthropic"
+    ],
+    "runs": 3,
+    "temperature": 0.98,
+    "samples": {
+      "openai": [
+        "AnomalyScope is designed to detect and visualize abnormal patterns in data, helping users identify potential issues or unusual behaviors that may require further investigation.",
+        "AnomalyScope is a tool designed to detect, analyze, and mitigate anomalies in data and system behavior to enhance security and operational efficiency.",
+        "AnomalyScope is designed to detect and analyze anomalies in data patterns to help organizations identify potential issues or security threats."
+      ],
+      "anthropic": [
+        "AnomalyScope is a visual analytics tool designed to help users interactively explore and understand anomalies in time series data.",
+        "AnomalyScope is a diagnostic tool designed to help data scientists and analysts identify, visualize, and understand anomalies or unusual patterns in complex datasets.",
+        "AnomalyScope is a visual analytics tool designed to help users detect, explore, and understand anomalies or unexpected patterns in complex datasets."
+      ]
+    },
+    "cross_similarity": 0.49771016375359906,
+    "within": {
+      "openai": {
+        "mean": 0.5988693622052695,
+        "min": 0.5214723926380368
+      },
+      "anthropic": {
+        "mean": 0.7283171569131337,
+        "min": 0.6148648648648649
+      }
+    }
+  }
+}
