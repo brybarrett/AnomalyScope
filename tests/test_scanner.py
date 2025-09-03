@@ -1,4 +1,5 @@
-from src.anomaly_scanner.scanner import run_scan
+# ensure src/ is on path via pytest.ini; import without "src."
+from anomaly_scanner.scanner import run_scan
 
 def test_run_scan():
     anomalies = run_scan()
