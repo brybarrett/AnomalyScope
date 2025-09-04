@@ -3,7 +3,7 @@ name: live-shots
 on:
   workflow_dispatch:
   schedule:
-    - cron: "13 */3 * * *"   # every 3 hours (good signal, not noisy)
+    - cron: "13 */3 * * *"   # every 3 hours
 
 permissions:
   contents: write
@@ -33,37 +33,60 @@ jobs:
 
       - name: Install dependencies
         run: |
+          set -euxo pipefail
           python -m pip install -U pip
           pip install -r requirements.txt
+          # editable install so 'anomaly_scanner' package is importable
           pip install -e .
+          # quick sanity list
+          python -c "import sys; print('PY:', sys.version)"
+          python -c "import pkgutil; print('has_requests', pkgutil.find_loader('requests') is not None)"
 
-      - name: Jitter (0–900s) to avoid top-of-hour spikes
+      - name: Jitter (0–120s)
         run: |
-          SLEEP=$(( RANDOM % 900 ))
-          echo "Sleeping $SLEEP seconds…"
-          sleep $SLEEP
+          SLEEP=$(( RANDOM % 120 ))
+          echo "Sleeping $SLEEP seconds…"; sleep $SLEEP
 
-      # Decide providers using presence of env secrets inside shell (no secrets in 'if:' expressions)
+      # Decide providers using presence of secrets (read as env in shell)
       - name: Pick providers dynamically
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          set -euxo pipefail
           PROV=""
           if [ -n "$OPENAI_API_KEY" ]; then PROV="openai"; fi
           if [ -n "$ANTHROPIC_API_KEY" ]; then
             if [ -n "$PROV" ]; then PROV="$PROV,anthropic"; else PROV="anthropic"; fi
           fi
           echo "Chosen providers: $PROV"
-          echo "PROVIDERS=$PROV" >> $GITHUB_ENV
+          echo "PROVIDERS=$PROV" >> "$GITHUB_ENV"
 
-      - name: Fire cross-provider live shot (only if we have a provider)
-        # 'env' context is allowed in expressions; we avoid 'secrets' here
+      # Preflight: verify imports & package layout before calling providers
+      - name: Preflight imports & layout
+        run: |
+          set -euxo pipefail
+          ls -la
+          ls -la docs || true
+          ls -la src || true
+          python - <<'PY'
+          import sys, pkgutil
+          print("sys.path[0..3]:", sys.path[:3])
+          # These should all succeed after 'pip install -e .'
+          import anomaly_scanner
+          import reporting
+          import providers
+          print("imports OK")
+          PY
+
+      - name: Fire live shot
         if: env.PROVIDERS != ''
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          set -euxo pipefail
+          echo "Running providers=${{ env.PROVIDERS }}"
           python -m anomaly_scanner.cross_probe \
             --providers "${{ env.PROVIDERS }}" \
             --runs "${{ env.RUNS }}" \
@@ -74,11 +97,13 @@ jobs:
       - name: Refresh homepage index
         if: env.PROVIDERS != ''
         run: |
+          set -euxo pipefail
           python scripts/update_index.py || true
 
       - name: Commit & push artifacts
         if: env.PROVIDERS != ''
         run: |
+          set -euxo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/index.md docs/LATEST_ANOMALY.md docs/anomalies || true
