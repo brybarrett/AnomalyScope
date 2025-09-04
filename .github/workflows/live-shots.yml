@@ -1,54 +1,85 @@
 name: live-shots
 
 on:
-  # Run every 6 hours (13 min past the hour to avoid the top-of-hour rush)
-  schedule:
-    - cron: "13 */6 * * *"
-  # Allow manual runs from the Actions tab
   workflow_dispatch:
+  schedule:
+    - cron: "13 */3 * * *"   # every 3h with jitter below
 
 permissions:
   contents: write
 
-jobs:
-  shot:
-    runs-on: ubuntu-latest
+concurrency:
+  group: live-shots
+  cancel-in-progress: false
 
+jobs:
+  diag:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show basic env (no secrets)
+        run: |
+          echo "Repo: $GITHUB_REPOSITORY"
+          echo "Ref:  $GITHUB_REF"
+          echo "Actor: $GITHUB_ACTOR"
+
+      - name: Confirm secrets presence (boolean only)
+        run: |
+          if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then echo "OPENAI_API_KEY: present"; else echo "OPENAI_API_KEY: MISSING"; fi
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then echo "ANTHROPIC_API_KEY: present"; else echo "ANTHROPIC_API_KEY: MISSING"; fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install deps
         run: |
           python -m pip install -U pip
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Fire cross-provider live shot
+      - name: Jitter (0–120s)
+        run: |
+          SLEEP=$(( RANDOM % 120 ))
+          echo "Sleeping $SLEEP seconds…"; sleep $SLEEP
+
+      # SMOKE: run only OpenAI if its secret is present; skip otherwise.
+      - name: Smoke shot (OpenAI only)
+        if: ${{ secrets.OPENAI_API_KEY != '' }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python -m anomaly_scanner.cross_probe \
+            --providers openai \
+            --runs 2 \
+            --temperature 0.8 \
+            --threshold 0.85 \
+            --prompt "One-sentence description of AnomalyScope."
+
+      # If you want to try Anthropic next:
+      - name: Smoke shot (Anthropic only)
+        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python -m anomaly_scanner.cross_probe \
-            --providers openai,anthropic \
-            --runs 3 \
-            --temperature 0.9 \
+            --providers anthropic \
+            --runs 2 \
+            --temperature 0.8 \
             --threshold 0.85 \
-            --prompt "Explain the purpose of AnomalyScope in one concise sentence."
+            --prompt "One-sentence description of AnomalyScope."
 
-      - name: Refresh homepage index (mirrors LATEST_ANOMALY.md)
+      - name: Refresh homepage
         run: |
-          python scripts/update_index.py
+          python scripts/update_index.py || true
 
       - name: Commit & push artifacts
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/index.md docs/LATEST_ANOMALY.md docs/anomalies || true
-          git commit -m "ci: publish live anomaly and update homepage [skip ci]" || echo "nothing to commit"
-          git push
+          git commit -m "ci: diag/smoke shot + publish [skip ci]" || echo "nothing to commit"
+          git push || true
